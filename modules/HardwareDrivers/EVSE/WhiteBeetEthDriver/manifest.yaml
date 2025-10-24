@@ -1,0 +1,124 @@
+description: Driver module for the WhiteBeet Ethernet ISO15118 EVSE module
+config:
+  ethernet_interface:
+    description: Ethernet interface to use for communication with WhiteBeet module
+    type: string
+    default: eth0
+  mac_address:
+    description: "MAC address of the WhiteBeet module (format: c4:93:00:22:22:22)"
+    type: string
+    pattern: "^[a-fA-F0-9]{2}(:[a-fA-F0-9]{2}){5}$"
+  ip_address:
+    description: IP address of the WhiteBeet module
+    type: string
+    default: "192.168.1.100"
+  port:
+    description: TCP port for communication with WhiteBeet module
+    type: integer
+    minimum: 1
+    maximum: 65535
+    default: 15118
+  connection_timeout_s:
+    description: Connection timeout in seconds
+    type: integer
+    minimum: 1
+    maximum: 60
+    default: 10
+  retry_interval_s:
+    description: Retry interval in seconds for failed connections
+    type: integer
+    minimum: 1
+    maximum: 30
+    default: 5
+  max_retries:
+    description: Maximum number of connection retry attempts
+    type: integer
+    minimum: 1
+    maximum: 10
+    default: 3
+  connector_id:
+    description: Connector ID for this EVSE
+    type: integer
+    minimum: 1
+    default: 1
+  evse_id:
+    description: EVSE ID string (e.g., DE*WB*E12345*1)
+    type: string
+    default: "DE*WB*E12345*1"
+  max_current_A:
+    description: Maximum current in Amperes this EVSE can provide
+    type: integer
+    minimum: 6
+    maximum: 100
+    default: 32
+  min_current_A:
+    description: Minimum current in Amperes this EVSE can provide
+    type: integer
+    minimum: 6
+    maximum: 100
+    default: 6
+  max_voltage_V:
+    description: Maximum voltage in Volts this EVSE can provide
+    type: integer
+    minimum: 100
+    maximum: 1000
+    default: 400
+  min_voltage_V:
+    description: Minimum voltage in Volts this EVSE can provide
+    type: integer
+    minimum: 100
+    maximum: 1000
+    default: 100
+  max_power_W:
+    description: Maximum power in Watts this EVSE can provide
+    type: integer
+    minimum: 1000
+    maximum: 500000
+    default: 22000
+  phases:
+    description: Number of phases available
+    type: integer
+    minimum: 1
+    maximum: 3
+    default: 3
+  has_rcd:
+    description: Set to true if this EVSE has RCD functionality
+    type: boolean
+    default: true
+  has_connector_lock:
+    description: Set to true if this EVSE has connector lock functionality
+    type: boolean
+    default: true
+  enable_control_pilot:
+    description: Enable control pilot functionality
+    type: boolean
+    default: true
+  debug_mode:
+    description: Enable debug mode for detailed logging
+    type: boolean
+    default: false
+provides:
+  charger:
+    interface: ISO15118_charger
+    description: This module implements the ISO15118 charger interface for the WhiteBeet module
+  slac:
+    interface: slac
+    description: SLAC interface for powerline communication management
+  board_support:
+    interface: evse_board_support
+    description: Board support interface for basic EVSE control
+  powermeter:
+    interface: powermeter
+    description: Power measurement interface
+  rcd:
+    interface: ac_rcd
+    description: RCD (Residual Current Detection) interface
+  connector_lock:
+    interface: connector_lock
+    description: Connector lock interface
+enable_external_mqtt: true
+enable_telemetry: true
+metadata:
+  license: https://opensource.org/licenses/Apache-2.0
+  authors:
+    - Anton Mironenko

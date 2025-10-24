@@ -1,0 +1,142 @@
+active_modules:
+  # Minimal EVSE Manager for WhiteBeet testing
+  evse_manager:
+    module: EvseManager
+    config_implementation:
+      evse_manager:
+        connector_id: 1
+        evse_id: "DE*WB*E00001"
+        ac_nominal_voltage: 230
+        payment_enable_eim: true
+        payment_enable_contract: false
+        session_logging: false
+        three_phases: false              # Single phase for initial testing
+        has_ventilation: false
+        country_code: "DE"
+        rcd_enabled: false              # Disable for initial testing
+        max_current_import_A: 16        # Lower current for testing
+        charge_mode: "AC"
+        ac_hlc_enabled: true
+        ac_enforce_hlc: false
+    connections:
+      bsp:
+        - module_id: whitebeet_driver
+          implementation_id: evse_board_support
+      slac:
+        - module_id: whitebeet_driver
+          implementation_id: slac
+      hlc:
+        - module_id: whitebeet_driver
+          implementation_id: charger
+      powermeter:
+        - module_id: whitebeet_driver
+          implementation_id: powermeter
+      token_provider:
+        - module_id: auth_manager
+          implementation_id: token_provider
+
+  # WhiteBeet Driver - Development Configuration
+  whitebeet_driver:
+    module: WhiteBeetEthDriver
+    config_implementation:
+      main:
+        # Network - adjust IP to match your WhiteBeet hardware
+        ip_address: "192.168.1.100"     # Change to your WhiteBeet IP
+        port: 15118
+        connection_timeout: 10000        # Longer timeout for development
+        
+        # EVSE Settings
+        evse_id: "DE*WB*E00001"
+        
+        # Conservative electrical settings for testing
+        max_current: 16
+        max_voltage: 230
+        phases: 1
+        
+        # SLAC - disabled for initial testing
+        enable_autostart: false
+        matching_timeout: 30
+        
+        # RCD - disabled for initial testing  
+        rcd_enabled: false
+        rcd_threshold: 30
+        
+        # Connector lock - enabled with long timeout
+        lock_timeout: 10000
+        
+        # Enhanced telemetry for debugging
+        telemetry_enabled: true
+        telemetry_interval: 500          # More frequent updates for debugging
+
+  # Minimal Authentication
+  auth_manager:
+    module: Auth
+    config_implementation:
+      main:
+        selection_algorithm: "UserDefault"
+        connection_timeout: 60           # Long timeout for testing
+        master_pass_group_id: "test"
+        prioritize_authorization_over_stopping_transaction: false
+        ignore_connector_faults: true   # Ignore faults during testing
+    connections:
+      token_provider:
+        - module_id: token_provider_test
+          implementation_id: auth_token_provider
+      token_validator:
+        - module_id: token_validator_test
+          implementation_id: auth_token_validator
+      evse_manager:
+        - module_id: evse_manager
+          implementation_id: auth
+
+  # Test Token Provider
+  token_provider_test:
+    module: DummyTokenProvider
+    config_implementation:
+      main:
+        token: "TEST1234"
+        type: "ISO14443"
+
+  # Test Token Validator - always accepts
+  token_validator_test:
+    module: DummyTokenValidator
+    config_implementation:
+      main:
+        sleep: 0.1                      # Fast validation for testing
+        validation_result: "Accepted"
+        validation_reason: "Test token - always valid"
+
+# Development Logging - Very detailed
+logging:
+  config:
+    disable_logging_to_stdout: false
+    logfile: "./logs/whitebeet-dev.log"
+    also_log_to_console: true
+  loggers:
+    - logger: "manager"
+      level: "debug"
+    - logger: "whitebeet_driver"
+      level: "debug"                   # Maximum detail for WhiteBeet
+    - logger: "evse_manager"  
+      level: "debug"
+    - logger: "auth_manager"
+      level: "debug"
+    - logger: "framework"
+      level: "info"
+
+# Development Settings
+error_handling:
+  error_history_path: "./logs/whitebeet-dev-errors.log"
+  raise_framework_errors: true        # Fail fast during development
+
+settings:
+  telemetry_enabled: true
+  expose_mac_addresses: true          # Useful for network debugging
+  expose_ip_addresses: true
+
+# Development Notes:
+# 1. Adjust ip_address to match your WhiteBeet module
+# 2. Start with single phase (phases: 1) and low current (16A) for safety
+# 3. RCD and SLAC are disabled initially - enable after basic connectivity works
+# 4. All logging is set to debug level for maximum visibility
+# 5. Authentication is set to always accept for testing

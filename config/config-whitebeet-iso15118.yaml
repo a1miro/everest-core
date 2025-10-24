@@ -1,0 +1,245 @@
+active_modules:
+  evse_manager:
+    module: EvseManager
+    config_implementation:
+      evse_manager:
+        connector_id: 1
+        evse_id: "DE*ABC*E12345"
+        evse_id_din: "49A80737A06"
+        payment_enable_eim: true
+        payment_enable_contract: true
+        ac_nominal_voltage: 230
+        ev_receipt_required: false
+        session_logging: true
+        session_logging_path: "./logs/"
+        session_logging_xml: false
+        three_phases: true
+        has_ventilation: true
+        country_code: "DE"
+        rcd_enabled: true
+        max_current_import_A: 32
+        max_current_export_A: 0
+        charge_mode: "AC"
+        ac_hlc_enabled: true
+        ac_hlc_use_5percent: false
+        ac_enforce_hlc: false
+        ac_with_soc: false
+        dc_isolation_voltage_V: 500
+    connections:
+      bsp:
+        - module_id: whitebeet_driver
+          implementation_id: evse_board_support
+      slac:
+        - module_id: whitebeet_driver
+          implementation_id: slac
+      hlc:
+        - module_id: whitebeet_driver
+          implementation_id: charger
+      powermeter:
+        - module_id: whitebeet_driver
+          implementation_id: powermeter
+      rcd:
+        - module_id: whitebeet_driver
+          implementation_id: rcd
+      connector_lock:
+        - module_id: whitebeet_driver
+          implementation_id: connector_lock
+      energy_manager:
+        - module_id: grid_connection_point
+          implementation_id: energy_manager
+      token_provider:
+        - module_id: auth
+          implementation_id: token_provider
+
+  whitebeet_driver:
+    module: WhiteBeetEthDriver
+    config_implementation:
+      main:
+        # Network configuration
+        ip_address: "192.168.1.100"
+        port: 15118
+        connection_timeout: 5000
+        
+        # EVSE identification
+        evse_id: "DE*ABC*E12345"
+        
+        # Electrical parameters
+        max_current: 32
+        max_voltage: 400
+        phases: 3
+        
+        # SLAC configuration
+        enable_autostart: true
+        matching_timeout: 10
+        
+        # RCD configuration
+        rcd_enabled: true
+        rcd_threshold: 30
+        
+        # Connector lock configuration
+        lock_timeout: 5000
+        
+        # Telemetry settings
+        telemetry_enabled: true
+        telemetry_interval: 1000
+
+  grid_connection_point:
+    module: EnergyManager
+    config_implementation:
+      main:
+        nominal_ac_voltage: 230
+        update_interval: 1
+        schedule_interval_duration: 60
+        schedule_total_duration: 1440
+    connections:
+      energy_trunk:
+        - module_id: energy_node
+          implementation_id: energy_manager
+
+  energy_node:
+    module: EnergyNode
+    config_implementation:
+      main:
+        fuse_limit_A: 40
+        phase_count: 3
+
+  auth:
+    module: Auth
+    config_implementation:
+      main:
+        selection_algorithm: "UserDefault"
+        connection_timeout: 10
+        master_pass_group_id: "default"
+        prioritize_authorization_over_stopping_transaction: true
+        ignore_connector_faults: false
+    connections:
+      token_provider:
+        - module_id: token_provider_rfid
+          implementation_id: auth_token_provider
+      token_validator:
+        - module_id: token_validator_dummy
+          implementation_id: auth_token_validator
+      evse_manager:
+        - module_id: evse_manager
+          implementation_id: auth
+
+  token_provider_rfid:
+    module: JsTibberPriceApiManager
+    config_implementation:
+      main:
+        api_key: ""
+        additional_cost_per_kwh: 0
+
+  token_validator_dummy:
+    module: DummyTokenValidator
+    config_implementation:
+      main:
+        sleep: 0.5
+        validation_result: "Accepted"
+        validation_reason: "Token valid"
+
+  # Optional: Add OCPP support for backend connectivity
+  ocpp:
+    module: OCPP
+    config_implementation:
+      main:
+        ChargePointConfigPath: "./ocpp-config.json"
+        CoreDatabasePath: "./cp.db"
+        DeviceDatabasePath: "./device_model_storage.db"
+        EnableExternalWebsocketControl: false
+        MessageLogPath: "./logs/"
+        MessageTimeout: 60
+        NetworkProfileTimeout: 60
+        RequestComRetries: 3
+        RetryBackoffRandomRange: 1
+        RetryBackoffRepeatTimes: 3
+        RetryBackoffWaitMinimum: 2
+        SupportedChargingProfilePurposes:
+          - "ChargingStationExternalConstraints"
+          - "TxDefaultProfile"
+          - "TxProfile"
+        WebsocketPingInterval: 30
+    connections:
+      evse_manager:
+        - module_id: evse_manager
+          implementation_id: evse_manager
+      system:
+        - module_id: system
+          implementation_id: system
+      security:
+        - module_id: evse_security
+          implementation_id: evse_security
+      data_transfer:
+        - module_id: data_transfer
+          implementation_id: data_transfer
+
+  # Security module for certificate management
+  evse_security:
+    module: EvseV2G
+    config_implementation:
+      main:
+        evse_id: "DE*ABC*E12345"
+        nid_leaf: "DE"
+        nid_mf: "ABC"
+        nid_pcid: "012345"
+        supported_DIN: false
+        supported_ISO: true
+        tls_security: "prohibit"
+        enforce_tls: false
+        is_cert_install_allowed: true
+
+  # System module for system-level operations
+  system:
+    module: System
+    config_implementation:
+      main:
+        firmware_update_channel: "stable"
+
+# Logging configuration
+logging:
+  config:
+    disable_logging_to_stdout: false
+    logfile: "./logs/everest.log"
+    also_log_to_console: true
+  loggers:
+    - logger: "manager"
+      level: "info"
+    - logger: "whitebeet_driver" 
+      level: "debug"
+    - logger: "evse_manager"
+      level: "info"
+    - logger: "auth"
+      level: "info"
+    - logger: "ocpp"
+      level: "info"
+
+# Optional: Error handling configuration  
+error_handling:
+  error_history_path: "./logs/error_history.log"
+  raise_framework_errors: false
+
+# Optional: Additional settings
+settings:
+  telemetry_enabled: true
+  expose_mac_addresses: false
+  expose_ip_addresses: false
+
+# Metadata
+x-module-layout:
+  # Define the physical layout and relationships
+  evse_manager:
+    type: "evse"
+    connectors: 
+      - id: 1
+        type: "IEC62196Type2Cable"
+    
+  whitebeet_driver:
+    type: "hardware_driver" 
+    hardware: "8devices_whitebeet_ei"
+    communication: "ethernet"
+    
+  energy_manager:
+    type: "energy_management"
+    
+  auth:
+    type: "authorization"
