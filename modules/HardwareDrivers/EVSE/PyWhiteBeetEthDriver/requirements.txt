@@ -1,0 +1,18 @@
+# Python dependencies for PyWhiteBeetEthDriver module
+# EVerest Python framework (should be available in EVerest environment)
+# everest-framework
+
+# Standard library dependencies (included with Python)
+# - socket
+# - struct  
+# - threading
+# - time
+# - logging
+# - json
+# - typing
+# - enum
+# - dataclasses
+# - asyncio
+
+# No additional external dependencies required
+# All communication is handled using standard Python socket library

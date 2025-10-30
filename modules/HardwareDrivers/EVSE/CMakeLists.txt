@@ -1,6 +1,7 @@
 ev_add_module(AdAcEvse22KwzKitBSP)
 ev_add_module(MicroMegaWattBSP)
 ev_add_module(PhyVersoBSP)
+ev_add_module(PyWhiteBeetEthDriver)
 ev_add_module(TIDA010939)
 ev_add_module(WhiteBeetEthDriver)
 ev_add_module(YetiDriver)

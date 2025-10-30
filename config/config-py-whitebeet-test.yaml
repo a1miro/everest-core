@@ -1,0 +1,181 @@
+active_modules:
+  # Simple EVSE Manager configuration for testing
+  evse_manager:
+    module: EvseManager
+    config_implementation:
+      evse_manager:
+        connector_id: 1
+        evse_id: "DE*WB*TEST01"
+        evse_id_din: "49A80737A06"
+        payment_enable_eim: true
+        payment_enable_contract: false
+        ac_nominal_voltage: 230
+        ev_receipt_required: false
+        session_logging: false
+        three_phases: false              # Single phase for simple testing
+        has_ventilation: false
+        country_code: "DE"
+        rcd_enabled: true
+        max_current_import_A: 16         # Lower current for testing
+        max_current_export_A: 0
+        charge_mode: "AC"
+        ac_hlc_enabled: true
+        ac_hlc_use_5percent: false
+        ac_enforce_hlc: false
+        ac_with_soc: false
+    connections:
+      bsp:
+        - module_id: py_whitebeet_test
+          implementation_id: evse_board_support
+      slac:
+        - module_id: py_whitebeet_test
+          implementation_id: slac
+      hlc:
+        - module_id: py_whitebeet_test
+          implementation_id: charger
+      powermeter:
+        - module_id: py_whitebeet_test
+          implementation_id: powermeter
+      rcd:
+        - module_id: py_whitebeet_test
+          implementation_id: rcd
+      connector_lock:
+        - module_id: py_whitebeet_test
+          implementation_id: connector_lock
+      energy_manager:
+        - module_id: energy_manager
+          implementation_id: energy_manager
+      token_provider:
+        - module_id: auth
+          implementation_id: token_provider
+
+  # Python WhiteBeet Driver - Test Configuration
+  py_whitebeet_test:
+    module: PyWhiteBeetEthDriver
+    config_implementation:
+      main:
+        # Basic Network Settings
+        ip_address: "192.168.1.100"
+        port: 15118
+        connection_timeout: 3000
+        reconnect_interval: 5000
+        
+        # Simple EVSE Configuration
+        evse_id: "DE*WB*TEST01"
+        vendor_id: "8devices"
+        model_name: "WHITE-beet-EI"
+        
+        # Electrical Settings (conservative for testing)
+        max_current_l1: 16.0
+        max_current_l2: 16.0
+        max_current_l3: 16.0
+        max_voltage: 240.0
+        nominal_voltage: 230.0
+        frequency: 50.0
+        phases: 1                        # Single phase for simplicity
+        
+        # SLAC Configuration
+        slac_enabled: true
+        slac_matching_timeout_s: 5       # Shorter timeout for testing
+        enable_autostart: false          # Manual start for testing
+        
+        # Safety Features
+        rcd_enabled: true
+        rcd_threshold_ma: 30
+        connector_lock_enabled: true
+        lock_timeout_ms: 3000
+        
+        # ISO 15118 Settings
+        iso15118_enabled: true
+        iso15118_ac_single_phase_supported: true
+        iso15118_ac_three_phase_supported: false
+        iso15118_dc_supported: false
+        iso15118_free_service: true
+        
+        # Monitoring
+        powermeter_enabled: true
+        powermeter_poll_interval_ms: 2000
+        telemetry_enabled: true
+        telemetry_interval_ms: 2000
+        
+        # Debug Settings
+        debug_mode: true                 # Enable debug for testing
+        log_raw_messages: true           # Log raw messages for debugging
+        message_timeout_ms: 2000
+
+  # Minimal Energy Manager
+  energy_manager:
+    module: EnergyManager
+    config_implementation:
+      main:
+        nominal_ac_voltage: 230
+        update_interval: 2
+        schedule_interval_duration: 60
+        schedule_total_duration: 120
+
+  # Simple Auth for testing
+  auth:
+    module: Auth
+    config_implementation:
+      main:
+        selection_algorithm: "FindFirst"
+        connection_timeout: 5
+        master_pass_group_id: "test"
+        prioritize_authorization_over_stopping_transaction: true
+        ignore_connector_faults: true    # Ignore faults during testing
+    connections:
+      token_provider:
+        - module_id: token_provider_test
+          implementation_id: auth_token_provider
+      token_validator:
+        - module_id: token_validator_test
+          implementation_id: auth_token_validator
+      evse_manager:
+        - module_id: evse_manager
+          implementation_id: auth
+
+  # Test token provider
+  token_provider_test:
+    module: DummyTokenProvider
+    config_implementation:
+      main:
+        token: "TEST1234"
+        type: "ISO14443"
+
+  # Test token validator
+  token_validator_test:
+    module: DummyTokenValidator
+    config_implementation:
+      main:
+        sleep: 0.1                       # Fast validation for testing
+        validation_result: "Accepted"
+        validation_reason: "Test token accepted"
+
+# Logging - Verbose for testing
+logging:
+  config:
+    disable_logging_to_stdout: false
+    logfile: "./logs/py-whitebeet-test.log"
+    also_log_to_console: true
+  loggers:
+    - logger: "manager"
+      level: "debug"
+    - logger: "py_whitebeet_test"
+      level: "debug"
+    - logger: "evse_manager"
+      level: "debug"
+    - logger: "auth"
+      level: "info"
+    - logger: "energy_manager"
+      level: "info"
+
+# Error Handling
+error_handling:
+  error_history_path: "./logs/py-whitebeet-test-errors.log"
+  raise_framework_errors: true          # Raise errors for debugging
+
+# Test Settings
+settings:
+  telemetry_enabled: true
+  expose_mac_addresses: true            # OK for testing
+  expose_ip_addresses: true             # OK for testing

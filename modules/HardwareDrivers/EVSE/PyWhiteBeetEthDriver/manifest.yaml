@@ -1,0 +1,96 @@
+description: Python implementation of WhiteBeet Ethernet driver for ISO 15118/SLAC
+provides:
+  evse_board_support:
+    interface: evse_board_support
+    description: EVSE board support interface for WhiteBeet
+  slac:
+    interface: slac
+    description: SLAC interface for powerline communication
+  charger:
+    interface: ISO15118_charger
+    description: ISO 15118 V2G communication interface
+  powermeter:
+    interface: powermeter
+    description: Energy measurement interface
+  rcd:
+    interface: ac_rcd
+    description: RCD monitoring interface
+  connector_lock:
+    interface: connector_lock
+    description: Connector locking mechanism interface
+
+config:
+  # Network configuration
+  ip_address:
+    description: IP address of the WhiteBeet module
+    type: string
+    default: "192.168.1.100"
+  port:
+    description: TCP port of the WhiteBeet module
+    type: integer
+    default: 15118
+  connection_timeout:
+    description: Connection timeout in milliseconds
+    type: integer
+    default: 5000
+
+  # EVSE configuration
+  evse_id:
+    description: EVSE identifier
+    type: string
+    default: "DE*PYW*E00001"
+  
+  # Electrical parameters
+  max_current:
+    description: Maximum current in amperes
+    type: number
+    default: 32
+  max_voltage:
+    description: Maximum voltage in volts
+    type: number
+    default: 400
+  phases:
+    description: Number of phases (1 or 3)
+    type: integer
+    default: 3
+
+  # SLAC configuration
+  enable_autostart:
+    description: Enable SLAC autostart
+    type: boolean
+    default: true
+  matching_timeout:
+    description: SLAC matching timeout in seconds
+    type: integer
+    default: 10
+
+  # RCD configuration
+  rcd_enabled:
+    description: Enable RCD monitoring
+    type: boolean
+    default: true
+  rcd_threshold:
+    description: RCD threshold in milliamperes
+    type: integer
+    default: 30
+
+  # Connector lock configuration
+  lock_timeout:
+    description: Connector lock timeout in milliseconds
+    type: integer
+    default: 5000
+
+  # Telemetry configuration
+  telemetry_enabled:
+    description: Enable telemetry
+    type: boolean
+    default: true
+  telemetry_interval:
+    description: Telemetry interval in milliseconds
+    type: integer
+    default: 1000
+
+metadata:
+  license: https://opensource.org/licenses/Apache-2.0
+  authors:
+    - WhiteBeet Python Driver Team

@@ -1,0 +1,222 @@
+active_modules:
+  # Development EVSE Manager - for offline development without hardware
+  evse_manager:
+    module: EvseManager
+    config_implementation:
+      evse_manager:
+        connector_id: 1
+        evse_id: "DE*DEV*PY001"
+        evse_id_din: "49A80737A06"
+        payment_enable_eim: true
+        payment_enable_contract: false
+        ac_nominal_voltage: 230
+        ev_receipt_required: false
+        session_logging: true
+        session_logging_path: "./logs/dev/"
+        three_phases: true
+        has_ventilation: false
+        country_code: "DE"
+        rcd_enabled: true
+        max_current_import_A: 32
+        max_current_export_A: 0
+        charge_mode: "AC"
+        ac_hlc_enabled: true
+        ac_hlc_use_5percent: false
+        ac_enforce_hlc: false
+        ac_with_soc: false
+    connections:
+      bsp:
+        - module_id: py_whitebeet_dev
+          implementation_id: evse_board_support
+      slac:
+        - module_id: py_whitebeet_dev
+          implementation_id: slac
+      hlc:
+        - module_id: py_whitebeet_dev
+          implementation_id: charger
+      powermeter:
+        - module_id: py_whitebeet_dev
+          implementation_id: powermeter
+      rcd:
+        - module_id: py_whitebeet_dev
+          implementation_id: rcd
+      connector_lock:
+        - module_id: py_whitebeet_dev
+          implementation_id: connector_lock
+      energy_manager:
+        - module_id: energy_manager
+          implementation_id: energy_manager
+      token_provider:
+        - module_id: auth
+          implementation_id: token_provider
+
+  # Python WhiteBeet Driver - Development Configuration
+  py_whitebeet_dev:
+    module: PyWhiteBeetEthDriver
+    config_implementation:
+      main:
+        # Network Settings - can use mock server for development
+        ip_address: "127.0.0.1"          # Localhost for mock development
+        port: 15118
+        connection_timeout: 2000
+        reconnect_interval: 3000
+        
+        # Development EVSE Identity
+        evse_id: "DE*DEV*PY001"
+        vendor_id: "8devices"
+        model_name: "WHITE-beet-EI-DEV"
+        firmware_version: "dev-1.0.0"
+        
+        # Electrical Configuration
+        max_current_l1: 32.0
+        max_current_l2: 32.0
+        max_current_l3: 32.0
+        max_voltage: 400.0
+        nominal_voltage: 230.0
+        frequency: 50.0
+        phases: 3
+        
+        # SLAC Settings - permissive for development
+        slac_enabled: true
+        slac_set_key_timeout_ms: 200
+        slac_matching_timeout_s: 3       # Short timeout for dev
+        slac_sounding_attenuation: 10
+        enable_autostart: false          # Manual control for development
+        
+        # Safety Settings - less strict for development
+        rcd_enabled: true
+        rcd_threshold_ma: 30
+        rcd_check_interval_ms: 500
+        
+        # Connector Lock
+        connector_lock_enabled: true
+        lock_timeout_ms: 2000
+        unlock_on_error: true
+        
+        # ISO 15118 Configuration
+        iso15118_enabled: true
+        iso15118_ac_three_phase_supported: true
+        iso15118_ac_single_phase_supported: true
+        iso15118_dc_supported: false
+        iso15118_internet_supported: false
+        iso15118_free_service: true
+        iso15118_energy_transfer_mode: "AC_three_phase_core"
+        
+        # Power Measurement
+        powermeter_enabled: true
+        powermeter_poll_interval_ms: 1000
+        power_smoothing_enabled: true
+        
+        # Communication
+        message_timeout_ms: 1500
+        heartbeat_interval_ms: 3000
+        protocol_version: "1.0"
+        
+        # Safety Features
+        emergency_stop_enabled: true
+        overvoltage_protection: true
+        undervoltage_protection: true
+        overcurrent_protection: true
+        overtemperature_protection: true
+        
+        # Development and Debug Settings
+        debug_mode: true                 # Full debug for development
+        log_raw_messages: true           # Log all messages
+        telemetry_enabled: true
+        telemetry_interval_ms: 500       # Frequent updates for development
+        
+        # Development-specific settings
+        mock_mode: false                 # Set to true to use mock hardware responses
+        simulate_hardware_delays: true   # Simulate realistic response times
+        fail_safe_mode: true            # Extra safety checks for development
+
+  # Energy Manager
+  energy_manager:
+    module: EnergyManager
+    config_implementation:
+      main:
+        nominal_ac_voltage: 230
+        update_interval: 1
+        schedule_interval_duration: 60
+        schedule_total_duration: 1440
+
+  # Auth Manager
+  auth:
+    module: Auth
+    config_implementation:
+      main:
+        selection_algorithm: "PlugAndCharge"
+        connection_timeout: 10
+        master_pass_group_id: "dev"
+        prioritize_authorization_over_stopping_transaction: true
+        ignore_connector_faults: false
+    connections:
+      token_provider:
+        - module_id: token_provider_dev
+          implementation_id: auth_token_provider
+      token_validator:
+        - module_id: token_validator_dev
+          implementation_id: auth_token_validator
+      evse_manager:
+        - module_id: evse_manager
+          implementation_id: auth
+
+  # Development token provider
+  token_provider_dev:
+    module: DummyTokenProvider
+    config_implementation:
+      main:
+        token: "DEV12345"
+        type: "ISO14443"
+
+  # Development token validator
+  token_validator_dev:
+    module: DummyTokenValidator
+    config_implementation:
+      main:
+        sleep: 0.2
+        validation_result: "Accepted"
+        validation_reason: "Development token - always valid"
+
+# Development Logging - Very detailed
+logging:
+  config:
+    disable_logging_to_stdout: false
+    logfile: "./logs/py-whitebeet-dev.log"
+    also_log_to_console: true
+  loggers:
+    - logger: "manager"
+      level: "debug"
+    - logger: "py_whitebeet_dev"
+      level: "debug"
+    - logger: "evse_manager"
+      level: "debug"
+    - logger: "auth"
+      level: "debug"
+    - logger: "energy_manager"
+      level: "debug"
+
+# Error Handling - Strict for development
+error_handling:
+  error_history_path: "./logs/py-whitebeet-dev-errors.log"
+  raise_framework_errors: true
+
+# Development Settings
+settings:
+  telemetry_enabled: true
+  expose_mac_addresses: true
+  expose_ip_addresses: true
+
+# Development Notes:
+# 
+# To use this configuration:
+# 1. Run the standalone test first: python3 test_whitebeet.py
+# 2. If hardware is not available, set mock_mode: true in py_whitebeet_dev config
+# 3. Check logs in ./logs/py-whitebeet-dev.log for detailed debugging
+# 4. Use EVerest admin panel or CLI tools to monitor module status
+#
+# Development workflow:
+# - Start with mock_mode: true for initial development
+# - Switch to mock_mode: false when hardware is available  
+# - Use debug_mode: true and log_raw_messages: true for troubleshooting
+# - Monitor telemetry data for performance optimization
